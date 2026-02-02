@@ -3,57 +3,58 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Do you love me?</title>
+  <title>Do you love me? — Surprise</title>
   <style>
     :root{
-      --bg: linear-gradient(135deg,#ffefef 0%, #fff6f0 100%);
-      --accent: #ff3b6b;
-      --yes-bg: #ff6b94;
-      --no-bg: #ffffff;
-      --shadow: 0 8px 20px rgba(0,0,0,0.12);
+      --muted: #7b7b7b;
+      --yes-grad: linear-gradient(180deg,#ff3b6b,#ff7b98);
+      --card-bg: linear-gradient(180deg,#fff,#fff);
+      --dark-1: #040006;
+      --dark-2: #1a0a22;
+      --text-light: #fff6fb;
     }
 
-    html,body{
-      height:100%;
-      margin:0;
-      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg);
+    /* Reset & layout */
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;}
+    body{
       display:flex;
       align-items:center;
       justify-content:center;
+      background: radial-gradient(900px 400px at 10% 10%, rgba(255,80,120,0.04) 0%, transparent 20%),
+                  linear-gradient(180deg,#faf7fb,#fff);
+      padding:24px;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
 
-    .stage{
+    /* View container (single-file "pages") */
+    .view {
       width:100%;
-      max-width:900px;
-      height:80vh;
-      max-height:700px;
-      background: rgba(255,255,255,0.6);
-      border-radius:16px;
-      box-shadow: var(--shadow);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:flex-start;
-      padding:48px 32px;
-      position:relative;
+      max-width:980px;
+      border-radius:18px;
       overflow:hidden;
+      position:relative;
+      box-shadow:0 18px 60px rgba(20,12,40,0.08);
+      background:var(--card-bg);
     }
 
-    h1{
-      font-size:clamp(36px,6vw,72px);
-      margin:0;
-      color:#2a2a2a;
-      letter-spacing:1px;
-      user-select:none;
+    /* --- Home / Question view --- */
+    #home {
+      padding:48px;
       text-align:center;
     }
 
+    #home h1{
+      margin:0;
+      font-size:clamp(28px,6vw,64px);
+      color:#222;
+      user-select:none;
+    }
+
     .controls{
-      width:100%;
       margin-top:36px;
       position:relative;
-      height:160px; /* area where buttons live */
+      height:160px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -63,124 +64,170 @@
       border:0;
       cursor:pointer;
       border-radius:12px;
-      font-weight:700;
-      box-shadow: var(--shadow);
+      font-weight:800;
+      box-shadow: 0 10px 28px rgba(20,12,40,0.06);
+      user-select:none;
     }
 
     #yes{
-      font-size: clamp(18px,3vw,36px);
+      font-size:clamp(18px,3vw,36px);
       padding:18px 44px;
-      background: linear-gradient(180deg, #ff8aa7, var(--yes-bg));
+      background: var(--yes-grad);
       color:white;
-      transform:scale(1.0);
-      transition: transform .12s ease;
       margin-right:36px;
     }
-    #yes:active{ transform:scale(.98); }
+    #yes:active{ transform: scale(.98); }
+
     #no{
       position:absolute;
       width:72px;
       height:36px;
       font-size:14px;
       padding:6px 8px;
-      background:var(--no-bg);
-      color:#333;
+      background:#222;
+      color:#ddd;
       right:calc(50% - 36px);
       top:62px;
       transition: left .12s ease, top .12s ease, transform .08s ease;
-      will-change: left, top;
+      will-change: left, top, transform;
     }
 
-    #message{
-      position: absolute;
-      bottom:26px;
-      left:50%;
-      transform: translateX(-50%) translateY(40px);
-      background: rgba(255,255,255,0.85);
-      padding:12px 18px;
-      border-radius:999px;
-      font-size:18px;
-      color:var(--accent);
-      display:flex;
-      gap:10px;
+    /* --- Fullscreen dark view (hidden by default) --- */
+    #love {
+      position:fixed;
+      inset:0;
+      display:none;               /* hidden initially */
       align-items:center;
-      opacity:0;
+      justify-content:center;
+      flex-direction:column;
+      z-index:9999;
+      background: radial-gradient(1200px 500px at 15% 10%, rgba(255,80,140,0.03), transparent 12%),
+                  linear-gradient(180deg,var(--dark-1), var(--dark-2));
+      color:var(--text-light);
+      overflow:hidden;
+      padding: 6vh 4vw;
+      box-sizing: border-box;
+    }
+
+    /* Only the two big lines are included in the dark view */
+    #love .center {
+      text-align:center;
+      z-index:6;
       pointer-events:none;
-      transition:opacity .4s ease, transform .5s cubic-bezier(.2,.9,.2,1);
-      box-shadow: 0 10px 30px rgba(250,60,110,0.12);
       user-select:none;
     }
 
-    #message.show{
-      opacity:1;
-      transform: translateX(-50%) translateY(0);
+    #love h1{
+      margin:0;
+      font-weight:900;
+      font-size:clamp(34px,9.5vw,120px);
+      letter-spacing:4px;
+      color:var(--text-light);
+      text-shadow: 0 18px 40px rgba(0,0,0,0.7), 0 0 28px rgba(255,80,140,0.04);
+      line-height:1;
+      transform: translateY(-2vh);
+      white-space:pre-line; /* allow line breaks if needed */
     }
 
-    /* hearts container sits above background */
-    .hearts {
+    #love .sub {
+      margin-top:12px;
+      font-weight:800;
+      color:#ffd8ea;
+      font-size:clamp(20px,3.6vw,40px);
+      pointer-events:none;
+    }
+
+    /* falling items */
+    .falling {
       position:absolute;
       inset:0;
+      z-index:2;
       pointer-events:none;
       overflow:hidden;
     }
 
-    .heart {
+    .item {
       position:absolute;
-      font-size:26px;
+      top:-14vh;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 12px 18px rgba(0,0,0,0.6));
+      opacity:0;
       animation-name:fall;
       animation-timing-function: linear;
-      animation-iteration-count:1;
-      transform: translateY(-100%);
-      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.12));
-      will-change: transform, opacity;
-      opacity:0.95;
+      animation-iteration-count: 1;
     }
 
     @keyframes fall {
-      0% { transform: translateY(-120%) scale(0.8); opacity:0 }
-      10% { opacity:1 }
-      85% { transform: translateY(90vh) rotate(10deg) scale(1); opacity:1 }
-      100% { transform: translateY(110vh) rotate(25deg) scale(0.9); opacity:0.0 }
+      0%   { transform: translateY(-14vh) translateX(0) rotate(0deg) scale(.85); opacity:0; }
+      6%   { opacity:1; }
+      84%  { opacity:1; }
+      100% { transform: translateY(120vh) translateX(var(--drift)) rotate(var(--rot)) scale(1); opacity:0; }
     }
 
-    /* small helper for mobile */
+    .glow {
+      position:absolute;
+      inset:0;
+      z-index:3;
+      pointer-events:none;
+      background:
+        radial-gradient(420px 260px at 10% 78%, rgba(255,40,120,0.04), transparent 12%),
+        radial-gradient(520px 300px at 92% 14%, rgba(120,70,180,0.03), transparent 12%);
+      mix-blend-mode:screen;
+    }
+
+    /* Hide any text outside the big messages in the dark view (no back button, no small text) */
+    /* small screens */
     @media (max-width:520px){
       .controls{ height:200px; }
       #no{ width:64px; height:38px; font-size:13px;}
       #yes{ padding:14px 30px; }
+      #love h1 { font-size: clamp(26px, 12vw, 72px); letter-spacing:2px; }
     }
   </style>
 </head>
 <body>
-  <main class="stage" id="stage">
-    <h1>Do you love me?</h1>
+  <!-- HOME VIEW -->
+  <section id="home" class="view" role="main" aria-labelledby="qTitle">
+    <h1 id="qTitle">Do you love me?</h1>
 
-    <div class="controls" id="controls">
-      <button id="yes" aria-label="Yes, I love you">YES</button>
+    <div class="controls" id="controls" aria-hidden="false">
+      <button id="yes" aria-label="Yes, open the surprise">YES</button>
       <button id="no" aria-label="No (try to click me)">No</button>
     </div>
+    <!-- NOTE: hint/extra text removed as requested -->
+  </section>
 
-    <div id="message" role="status" aria-live="polite">
-      <span style="font-size:20px;">I know you love me</span>
+  <!-- LOVE / DARK VIEW (hidden until YES is clicked) -->
+  <section id="love" aria-hidden="true" aria-live="polite">
+    <div class="falling" id="falling" aria-hidden="true"></div>
+    <div class="glow" aria-hidden="true"></div>
+
+    <div class="center" id="loveText">
+      <h1>I KNOW YOU LOVE ME
+LOVE YOU TOO, DARLING</h1>
+      <!-- No subtext, no back button — only the big messages -->
     </div>
-
-    <div class="hearts" id="hearts" aria-hidden="true"></div>
-  </main>
+  </section>
 
   <script>
-    (function(){
-      const stage = document.getElementById('stage');
-      const controls = document.getElementById('controls');
+    (function () {
+      // Home elements
+      const home = document.getElementById('home');
       const yes = document.getElementById('yes');
       const no = document.getElementById('no');
-      const heartsEl = document.getElementById('hearts');
-      const message = document.getElementById('message');
+      const controls = document.getElementById('controls');
 
-      // Position "no" initially near the right of center
+      // Love elements
+      const love = document.getElementById('love');
+      const falling = document.getElementById('falling');
+
+      /* -------------------------
+         Dodging "No" button logic
+         ------------------------- */
       function placeNoInitial(){
         const cRect = controls.getBoundingClientRect();
         const noRect = no.getBoundingClientRect();
-        const startLeft = (cRect.width/2) + 40; // relative to controls left
+        const startLeft = (cRect.width/2) + 40;
         const startTop = (cRect.height/2) - (noRect.height/2);
         no.style.left = startLeft + 'px';
         no.style.top = startTop + 'px';
@@ -188,46 +235,34 @@
       placeNoInitial();
       window.addEventListener('resize', placeNoInitial);
 
-      // Move "no" to a random safe location inside controls,
-      // tries to avoid being too close to the "yes" button.
       function moveNoAway(ev){
         const containerRect = controls.getBoundingClientRect();
         const noRect = no.getBoundingClientRect();
         const yesRect = yes.getBoundingClientRect();
 
-        const maxAttempts = 120;
+        const maxAttempts = 80;
         let newLeft = 0, newTop = 0;
-
         for (let i = 0; i < maxAttempts; i++){
           const x = Math.random() * (containerRect.width - noRect.width);
           const y = Math.random() * (containerRect.height - noRect.height);
-          // compute centers relative to viewport
           const cx = containerRect.left + x + noRect.width/2;
           const cy = containerRect.top + y + noRect.height/2;
           const yesCx = yesRect.left + yesRect.width/2;
           const yesCy = yesRect.top + yesRect.height/2;
           const distYes = Math.hypot(cx - yesCx, cy - yesCy);
 
-          // optionally avoid pointer if we have an event with coordinates
-          let avoidPointer = 0;
-          if (ev && (ev.clientX || ev.touches)){
+          let avoidPointer = 9999;
+          if (ev && (ev.clientX || (ev.touches && ev.touches[0]))){
             const px = ev.clientX || (ev.touches && ev.touches[0] && ev.touches[0].clientX) || -9999;
             const py = ev.clientY || (ev.touches && ev.touches[0] && ev.touches[0].clientY) || -9999;
             avoidPointer = Math.hypot(cx - px, cy - py);
-          } else {
-            avoidPointer = 9999;
           }
 
-          // Conditions to accept this spot:
-          // - not near YES button (distance > 160)
-          // - if event exists, far from pointer (<-> large avoidPointer)
           if (distYes > 140 && avoidPointer > 80){
             newLeft = x;
             newTop = y;
             break;
           }
-
-          // fallback: if final attempts, accept something at edge
           if (i === maxAttempts - 1){
             newLeft = x;
             newTop = y;
@@ -236,102 +271,112 @@
 
         no.style.left = Math.max(6, newLeft) + 'px';
         no.style.top = Math.max(6, newTop) + 'px';
-
-        // tiny random rotate to make it lively
         no.style.transform = `rotate(${(Math.random()*20-10)}deg)`;
       }
 
-      // Make the "no" button dodge on hover, touchstart, and mousedown
       no.addEventListener('mouseenter', moveNoAway);
       no.addEventListener('mousemove', moveNoAway);
-      no.addEventListener('mousedown', function(ev){
-        ev.preventDefault(); // try to stop quick focus/click
-        moveNoAway(ev);
-      });
-      // For touch screens: move away on touchstart and prevent default to make it hard
-      no.addEventListener('touchstart', function(ev){
-        ev.preventDefault();
-        moveNoAway(ev.touches && ev.touches[0]);
-      }, {passive:false});
-
-      // Extra: If pointer moves inside controls near the "no" button, move it
+      no.addEventListener('mousedown', function(ev){ ev.preventDefault(); moveNoAway(ev); });
+      no.addEventListener('touchstart', function(ev){ ev.preventDefault(); moveNoAway(ev.touches && ev.touches[0]); }, {passive:false});
       controls.addEventListener('mousemove', function(ev){
         const noRect = no.getBoundingClientRect();
         const dx = ev.clientX - (noRect.left + noRect.width/2);
         const dy = ev.clientY - (noRect.top + noRect.height/2);
         const dist = Math.hypot(dx,dy);
-        if (dist < 140){
-          moveNoAway(ev);
-        }
+        if (dist < 140) moveNoAway(ev);
       });
-
-      // Clicking "No" is possible but difficult. If it happens, do a playful reaction.
       no.addEventListener('click', function(){
-        // give a playful shake then move
         no.animate([
           { transform: 'translateX(0)' },
-          { transform: 'translateX(-10px)' },
-          { transform: 'translateX(10px)' },
+          { transform: 'translateX(-8px)' },
+          { transform: 'translateX(8px)' },
           { transform: 'translateX(0)' }
         ], { duration: 420, iterations: 1 });
-        setTimeout(()=> moveNoAway(), 250);
+        setTimeout(() => moveNoAway(), 220);
       });
 
-      // YES click: show message and drop hearts
-      yes.addEventListener('click', function(){
-        // show message
-        message.classList.add('show');
+      /* -------------------------
+         Show the dark full-screen view
+         ------------------------- */
+      yes.addEventListener('click', function showLoveView() {
+        // Hide home view entirely and reveal the full-screen dark view.
+        home.style.display = 'none';
+        love.style.display = 'flex';
+        love.setAttribute('aria-hidden', 'false');
 
-        // spawn hearts
-        spawnHearts(28);
+        // Start the rain effect
+        startRain();
 
-        // little button pulse
-        yes.animate([
-          { transform: 'scale(1)' },
-          { transform: 'scale(1.06)' },
-          { transform: 'scale(1)' }
-        ], { duration: 420, easing: 'ease-out' });
+        // Prevent double-binding if user clicks again
+        yes.removeEventListener('click', showLoveView);
       });
+      yes.addEventListener('keyup', function(e){ if (e.key === 'Enter' || e.key === ' ') yes.click(); });
 
-      // create n heart elements and animate them falling
-      function spawnHearts(n){
-        for (let i = 0; i < n; i++){
-          const span = document.createElement('div');
-          span.className = 'heart';
-          // use emoji hearts for easy visuals
-          span.textContent = ['💖','💕','❤️','❣️'][Math.floor(Math.random()*4)];
-          const startLeft = Math.random() * 100; // percent
-          span.style.left = startLeft + '%';
-          // randomize font size a bit
-          span.style.fontSize = (14 + Math.random()*32) + 'px';
-          // random animation duration between 2s and 5s
-          const dur = (2 + Math.random()*3).toFixed(2);
-          span.style.animationDuration = dur + 's';
-          // small horizontal drift using CSS translateX via animation-delay hack
-          span.style.animationDelay = (Math.random()*0.3) + 's';
-          heartsEl.appendChild(span);
+      /* -------------------------
+         Falling hearts & flowers
+         ------------------------- */
+      const POOLS = ['💖','💕','❤️','❣️','🌸','🌺','🌷','🌹','💐','🌼'];
+      let rainInterval = null;
+      let running = false;
 
-          // cleanup after animation ends
-          span.addEventListener('animationend', ()=> span.remove());
-        }
-
-        // auto-hide message after some seconds
-        setTimeout(()=> message.classList.remove('show'), 6000);
+      function createItem(char) {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.textContent = char || POOLS[Math.floor(Math.random()*POOLS.length)];
+        el.style.left = (Math.random()*100) + '%';
+        const size = (14 + Math.random()*56);
+        el.style.fontSize = size + 'px';
+        const drift = (Math.random()*80 - 40).toFixed(2) + 'vw';
+        el.style.setProperty('--drift', drift);
+        const rot = (Math.random()*720 - 360).toFixed(2) + 'deg';
+        el.style.setProperty('--rot', rot);
+        const dur = (3 + Math.random()*9).toFixed(2) + 's';
+        el.style.animationDuration = dur;
+        el.style.animationDelay = (Math.random()*1.2).toFixed(2) + 's';
+        el.style.transform = `rotate(${(Math.random()*40-20).toFixed(1)}deg)`;
+        falling.appendChild(el);
+        el.addEventListener('animationend', ()=> el.remove());
       }
 
-      // Ensure "no" stays inside when layout loads
-      setTimeout(placeNoInitial, 100);
+      function spawnBurst(count) {
+        for (let i=0;i<count;i++) createItem();
+      }
 
-      // Optional: keyboard support - yes via Enter/Space when focused
-      yes.addEventListener('keyup', function(e){
-        if (e.key === 'Enter' || e.key === ' ') yes.click();
+      function startRain() {
+        if (running) return;
+        running = true;
+        spawnBurst(36);
+        rainInterval = setInterval(()=>{
+          spawnBurst(6 + Math.floor(Math.random()*12));
+        }, 600);
+      }
+
+      // Click inside love view to create a burst (no other UI elements to ignore)
+      love.addEventListener('click', function(e){
+        const burstCount = 26;
+        for (let i=0;i<burstCount;i++){
+          const b = document.createElement('div');
+          b.className = 'item';
+          b.textContent = POOLS[Math.floor(Math.random()*POOLS.length)];
+          const x = Math.min(Math.max((e.clientX / window.innerWidth) * 100 + (Math.random()*12-6), 3), 97);
+          b.style.left = x + '%';
+          b.style.fontSize = (18 + Math.random()*44) + 'px';
+          b.style.setProperty('--drift', ((Math.random()*80-40)).toFixed(2) + 'vw');
+          b.style.setProperty('--rot', ((Math.random()*720)-360).toFixed(2) + 'deg');
+          b.style.animationDuration = (1.2 + Math.random()*2.8).toFixed(2) + 's';
+          b.style.animationDelay = '0s';
+          falling.appendChild(b);
+          b.addEventListener('animationend', ()=> b.remove());
+        }
       });
-      no.addEventListener('keyup', function(e){
-        if (e.key === 'Enter' || e.key === ' ') no.click();
+
+      // Ensure things are placed when the page first loads
+      setTimeout(placeNoInitial, 80);
+
+      // Cleanup on unload
+      window.addEventListener('beforeunload', ()=> {
+        if (rainInterval) clearInterval(rainInterval);
       });
-
-      // Accessibility: if JS disabled, no button won't dodge, but it's fine.
-
     })();
   </script>
 </body>
