@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Do you love me?</title>
+  <style>
+    :root{
+      --bg: linear-gradient(135deg,#ffefef 0%, #fff6f0 100%);
+      --accent: #ff3b6b;
+      --yes-bg: #ff6b94;
+      --no-bg: #ffffff;
+      --shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .stage{
+      width:100%;
+      max-width:900px;
+      height:80vh;
+      max-height:700px;
+      background: rgba(255,255,255,0.6);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:flex-start;
+      padding:48px 32px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    h1{
+      font-size:clamp(36px,6vw,72px);
+      margin:0;
+      color:#2a2a2a;
+      letter-spacing:1px;
+      user-select:none;
+      text-align:center;
+    }
+
+    .controls{
+      width:100%;
+      margin-top:36px;
+      position:relative;
+      height:160px; /* area where buttons live */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius:12px;
+      font-weight:700;
+      box-shadow: var(--shadow);
+    }
+
+    #yes{
+      font-size: clamp(18px,3vw,36px);
+      padding:18px 44px;
+      background: linear-gradient(180deg, #ff8aa7, var(--yes-bg));
+      color:white;
+      transform:scale(1.0);
+      transition: transform .12s ease;
+      margin-right:36px;
+    }
+    #yes:active{ transform:scale(.98); }
+    #no{
+      position:absolute;
+      width:72px;
+      height:36px;
+      font-size:14px;
+      padding:6px 8px;
+      background:var(--no-bg);
+      color:#333;
+      right:calc(50% - 36px);
+      top:62px;
+      transition: left .12s ease, top .12s ease, transform .08s ease;
+      will-change: left, top;
+    }
+
+    #message{
+      position: absolute;
+      bottom:26px;
+      left:50%;
+      transform: translateX(-50%) translateY(40px);
+      background: rgba(255,255,255,0.85);
+      padding:12px 18px;
+      border-radius:999px;
+      font-size:18px;
+      color:var(--accent);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .4s ease, transform .5s cubic-bezier(.2,.9,.2,1);
+      box-shadow: 0 10px 30px rgba(250,60,110,0.12);
+      user-select:none;
+    }
+
+    #message.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* hearts container sits above background */
+    .hearts {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+    }
+
+    .heart {
+      position:absolute;
+      font-size:26px;
+      animation-name:fall;
+      animation-timing-function: linear;
+      animation-iteration-count:1;
+      transform: translateY(-100%);
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.12));
+      will-change: transform, opacity;
+      opacity:0.95;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-120%) scale(0.8); opacity:0 }
+      10% { opacity:1 }
+      85% { transform: translateY(90vh) rotate(10deg) scale(1); opacity:1 }
+      100% { transform: translateY(110vh) rotate(25deg) scale(0.9); opacity:0.0 }
+    }
+
+    /* small helper for mobile */
+    @media (max-width:520px){
+      .controls{ height:200px; }
+      #no{ width:64px; height:38px; font-size:13px;}
+      #yes{ padding:14px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage">
+    <h1>Do you love me?</h1>
+
+    <div class="controls" id="controls">
+      <button id="yes" aria-label="Yes, I love you">YES</button>
+      <button id="no" aria-label="No (try to click me)">No</button>
+    </div>
+
+    <div id="message" role="status" aria-live="polite">
+      <span style="font-size:20px;">I know you love me</span>
+    </div>
+
+    <div class="hearts" id="hearts" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    (function(){
+      const stage = document.getElementById('stage');
+      const controls = document.getElementById('controls');
+      const yes = document.getElementById('yes');
+      const no = document.getElementById('no');
+      const heartsEl = document.getElementById('hearts');
+      const message = document.getElementById('message');
+
+      // Position "no" initially near the right of center
+      function placeNoInitial(){
+        const cRect = controls.getBoundingClientRect();
+        const noRect = no.getBoundingClientRect();
+        const startLeft = (cRect.width/2) + 40; // relative to controls left
+        const startTop = (cRect.height/2) - (noRect.height/2);
+        no.style.left = startLeft + 'px';
+        no.style.top = startTop + 'px';
+      }
+      placeNoInitial();
+      window.addEventListener('resize', placeNoInitial);
+
+      // Move "no" to a random safe location inside controls,
+      // tries to avoid being too close to the "yes" button.
+      function moveNoAway(ev){
+        const containerRect = controls.getBoundingClientRect();
+        const noRect = no.getBoundingClientRect();
+        const yesRect = yes.getBoundingClientRect();
+
+        const maxAttempts = 120;
+        let newLeft = 0, newTop = 0;
+
+        for (let i = 0; i < maxAttempts; i++){
+          const x = Math.random() * (containerRect.width - noRect.width);
+          const y = Math.random() * (containerRect.height - noRect.height);
+          // compute centers relative to viewport
+          const cx = containerRect.left + x + noRect.width/2;
+          const cy = containerRect.top + y + noRect.height/2;
+          const yesCx = yesRect.left + yesRect.width/2;
+          const yesCy = yesRect.top + yesRect.height/2;
+          const distYes = Math.hypot(cx - yesCx, cy - yesCy);
+
+          // optionally avoid pointer if we have an event with coordinates
+          let avoidPointer = 0;
+          if (ev && (ev.clientX || ev.touches)){
+            const px = ev.clientX || (ev.touches && ev.touches[0] && ev.touches[0].clientX) || -9999;
+            const py = ev.clientY || (ev.touches && ev.touches[0] && ev.touches[0].clientY) || -9999;
+            avoidPointer = Math.hypot(cx - px, cy - py);
+          } else {
+            avoidPointer = 9999;
+          }
+
+          // Conditions to accept this spot:
+          // - not near YES button (distance > 160)
+          // - if event exists, far from pointer (<-> large avoidPointer)
+          if (distYes > 140 && avoidPointer > 80){
+            newLeft = x;
+            newTop = y;
+            break;
+          }
+
+          // fallback: if final attempts, accept something at edge
+          if (i === maxAttempts - 1){
+            newLeft = x;
+            newTop = y;
+          }
+        }
+
+        no.style.left = Math.max(6, newLeft) + 'px';
+        no.style.top = Math.max(6, newTop) + 'px';
+
+        // tiny random rotate to make it lively
+        no.style.transform = `rotate(${(Math.random()*20-10)}deg)`;
+      }
+
+      // Make the "no" button dodge on hover, touchstart, and mousedown
+      no.addEventListener('mouseenter', moveNoAway);
+      no.addEventListener('mousemove', moveNoAway);
+      no.addEventListener('mousedown', function(ev){
+        ev.preventDefault(); // try to stop quick focus/click
+        moveNoAway(ev);
+      });
+      // For touch screens: move away on touchstart and prevent default to make it hard
+      no.addEventListener('touchstart', function(ev){
+        ev.preventDefault();
+        moveNoAway(ev.touches && ev.touches[0]);
+      }, {passive:false});
+
+      // Extra: If pointer moves inside controls near the "no" button, move it
+      controls.addEventListener('mousemove', function(ev){
+        const noRect = no.getBoundingClientRect();
+        const dx = ev.clientX - (noRect.left + noRect.width/2);
+        const dy = ev.clientY - (noRect.top + noRect.height/2);
+        const dist = Math.hypot(dx,dy);
+        if (dist < 140){
+          moveNoAway(ev);
+        }
+      });
+
+      // Clicking "No" is possible but difficult. If it happens, do a playful reaction.
+      no.addEventListener('click', function(){
+        // give a playful shake then move
+        no.animate([
+          { transform: 'translateX(0)' },
+          { transform: 'translateX(-10px)' },
+          { transform: 'translateX(10px)' },
+          { transform: 'translateX(0)' }
+        ], { duration: 420, iterations: 1 });
+        setTimeout(()=> moveNoAway(), 250);
+      });
+
+      // YES click: show message and drop hearts
+      yes.addEventListener('click', function(){
+        // show message
+        message.classList.add('show');
+
+        // spawn hearts
+        spawnHearts(28);
+
+        // little button pulse
+        yes.animate([
+          { transform: 'scale(1)' },
+          { transform: 'scale(1.06)' },
+          { transform: 'scale(1)' }
+        ], { duration: 420, easing: 'ease-out' });
+      });
+
+      // create n heart elements and animate them falling
+      function spawnHearts(n){
+        for (let i = 0; i < n; i++){
+          const span = document.createElement('div');
+          span.className = 'heart';
+          // use emoji hearts for easy visuals
+          span.textContent = ['💖','💕','❤️','❣️'][Math.floor(Math.random()*4)];
+          const startLeft = Math.random() * 100; // percent
+          span.style.left = startLeft + '%';
+          // randomize font size a bit
+          span.style.fontSize = (14 + Math.random()*32) + 'px';
+          // random animation duration between 2s and 5s
+          const dur = (2 + Math.random()*3).toFixed(2);
+          span.style.animationDuration = dur + 's';
+          // small horizontal drift using CSS translateX via animation-delay hack
+          span.style.animationDelay = (Math.random()*0.3) + 's';
+          heartsEl.appendChild(span);
+
+          // cleanup after animation ends
+          span.addEventListener('animationend', ()=> span.remove());
+        }
+
+        // auto-hide message after some seconds
+        setTimeout(()=> message.classList.remove('show'), 6000);
+      }
+
+      // Ensure "no" stays inside when layout loads
+      setTimeout(placeNoInitial, 100);
+
+      // Optional: keyboard support - yes via Enter/Space when focused
+      yes.addEventListener('keyup', function(e){
+        if (e.key === 'Enter' || e.key === ' ') yes.click();
+      });
+      no.addEventListener('keyup', function(e){
+        if (e.key === 'Enter' || e.key === ' ') no.click();
+      });
+
+      // Accessibility: if JS disabled, no button won't dodge, but it's fine.
+
+    })();
+  </script>
+</body>
+</html>
